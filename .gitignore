@@ -59,5 +59,13 @@ sysinfo.txt
 crashlytics-build.properties
 
 #HybridCLRData
-**/HybridCLRData/*
-**/HybridCLRData.meta
+**/[Hh]ybrid[Cc][Ll][Rr][Dd]ata/*
+**/Hybrid[Cc][Ll][Rr][Dd]ata.meta
+
+#GameDlls
+**/[Gg]ame[Dd]lls/*
+**/[Gg]ame[Dd]lls.meta
+
+#StreamingAssets
+[Aa]ssets/[Ss]treaming[Aa]ssets/*
+[Aa]ssets/[Ss]treaming[Aa]ssets.meta

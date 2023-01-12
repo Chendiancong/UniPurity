@@ -1,13 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class HotUpdateMain
+namespace HotUpdate
 {
-    public void Show()
+    public class HotUpdateMain
     {
-#if UNITY_EDITOR
-#endif
-        Debug.Log("Hello World!");
+        public void Show()
+        {
+            UnityEngine.Debug.Log("Hello world");
+        }
     }
 }

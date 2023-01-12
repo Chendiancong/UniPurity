@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 using HybridCLR;
+using HotUpdate;
 
 public class Preload : MonoBehaviour
 {
@@ -22,7 +23,22 @@ public class Preload : MonoBehaviour
 
     private void Start()
     {
+#if UNITY_EDITOR
         StartGame();
+#else
+        StartCoroutine(DownLoadAssets(StartGame));
+#endif
+    }
+
+    private void StartGame()
+    {
+#if UNITY_EDITOR
+#else
+        LoadMetadataForAOTAssemblies();
+        System.Reflection.Assembly.Load(GetAssetData("HotUpdate.dll"));
+#endif
+        var hotupdate = new HotUpdateMain();
+        hotupdate.Show();
     }
 
     private string GetWebRequestPath(string asset)
@@ -62,16 +78,6 @@ public class Preload : MonoBehaviour
         }
 
         onDownloadComplete();
-    }
-
-    private void StartGame()
-    {
-//        LoadMetadataForAOTAssemblies();
-//#if !UNITY_EDITOR
-//    System.Reflection.Assembly.Load(GetAssetData("Assembly-CSharp.dll"))
-//#endif
-        //var hotupdate = new HotUpdateMain();
-        //hotupdate.Show();
     }
 
     /// <summary>
