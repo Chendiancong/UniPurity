@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Networking;
 using HybridCLR;
 
 namespace UniPurity
@@ -12,6 +15,7 @@ namespace UniPurity
         private ProgressHandler mOnProgress;
         private LoadedHandler mOnLoaded;
         private ErrorHandler mOnError;
+        private MessageHandler mOnMsg;
 
         public event ProgressHandler OnProgress
         {
@@ -31,6 +35,18 @@ namespace UniPurity
             remove => mOnError -= value;
         }
 
+        public event MessageHandler OnMsg
+        {
+            add => mOnMsg += value;
+            remove => mOnMsg -= value;
+        }
+
+        public UniPurityPrepare() : this(new DefaultPrepareConfig(), new DefaultPrepareProxy()) { }
+
+        public UniPurityPrepare(IPrepareConfig config) : this(config, new DefaultPrepareProxy()) { }
+
+        public UniPurityPrepare(IPrepareProxy proxy) : this(new DefaultPrepareConfig(), proxy) { }
+
         public UniPurityPrepare(IPrepareConfig config, IPrepareProxy proxy)
         {
             mConfig = config;
@@ -42,17 +58,61 @@ namespace UniPurity
             mOnProgress = null;
             mOnLoaded = null;
             mOnError = null;
+            mOnMsg = null;
         }
 
-        public void Load()
+        public IEnumerator PrepareDlls()
         {
+            yield return 0;
+            string manifestPath = mConfig.AOTDllManifestLocalPath;
+            string manifestRemoteUrl = mConfig.AOTDllManifestRemoteUrl;
+            string random = DateTime.Now.ToString("yyyymmddhhmmss");
+            manifestRemoteUrl += $"?v={random}";
+            PostMessage($"Fetching {manifestRemoteUrl}");
 
+            UnityWebRequest request = UnityWebRequest.Get(manifestRemoteUrl);
+            yield return request.SendWebRequest();
+            if (!IsRequestSuccess(request))
+            {
+                var ex = new UniPurityPrepareLoadException()
+                {
+                    Status = LoadStatus.NetWorkError,
+                    FileName = manifestRemoteUrl,
+                };
+                PostError(ex);
+                yield break;
+            }
+            string[] remoteAOTTags = request.downloadHandler.text.Split('\n');
+            foreach (var tag in remoteAOTTags)
+                Debug.Log(tag);
         }
 
-        //private IEnumerator CoroutineLoad()
-        //{
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void PostMessage(string msg)
+        {
+            if (!(mOnMsg is null))
+                mOnMsg(msg);
+        }
 
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void PostError(UniPurityPrepareLoadException ex)
+        {
+            if (!(mOnError is null))
+                mOnError(ex);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool IsRequestSuccess(UnityWebRequest request)
+        {
+#if UNITY_2020_1_OR_NEWER
+            if (request.result != UnityWebRequest.Result.Success)
+                return false;
+#else
+            if (request.isHttpError || request.isNetworkError || !request.isDone)
+                return false;
+#endif
+            return true;
+        }
 
         /// <summary>
         /// dll文件加载进度
@@ -68,6 +128,11 @@ namespace UniPurity
         /// dll文件加载出错
         /// </summary>
         public delegate void ErrorHandler(UniPurityPrepareLoadException ex);
+
+        /// <summary>
+        /// 消息处理
+        /// </summary>
+        public delegate void MessageHandler(string message);
 
         public struct ProgressInfo
         {
@@ -122,17 +187,14 @@ namespace UniPurity
 
         private class DefaultPrepareConfig : IPrepareConfig
         {
-            private string mAOTDllManifestUrl = $"{Application.streamingAssetsPath}/GameDlls/AOTManifest.data";
-            public string AOTDllManifestUrl => mAOTDllManifestUrl;
-
-            private string mAOTDllUrl = $"{Application.streamingAssetsPath}/GameDlls/AOT";
-            public string AOTDllUrl => mAOTDllUrl;
-
-            private string mHotUpdateDllManifestUrl = $"{Application.streamingAssetsPath}/GameDlls/HotUpdateManifest.data";
-            public string HotUpdateDllManifestUrl => mHotUpdateDllManifestUrl;
-
-            private string mHotUpdateDllUrl = $"{Application.streamingAssetsPath}/GameDlls/HotUpdate";
-            public string HotUpdateDllUrl => mHotUpdateDllUrl;
+            public string AOTDllManifestLocalPath { get; } = $"{Application.streamingAssetsPath}/GameDlls/AOTManifest.data";
+            public string AOTDllManifestRemoteUrl { get; } = $"file://{Application.streamingAssetsPath}/GameDlls/AOTManifest.data";
+            public string AOTDllLocalPath { get; } = $"{Application.streamingAssetsPath}/GameDlls/AOT/";
+            public string AOTDllRemoteUrl { get; } = $"file://{Application.streamingAssetsPath}/GameDlls/AOT/";
+            public string HotUpdateDllManifestLocalPath { get; } = $"{Application.streamingAssetsPath}/GameDlls/HotUpdateManifest.data";
+            public string HotUpdateDllManifestRemoteUrl { get; } = $"file://{Application.streamingAssetsPath}/GameDlls/HotUpdateManifest.data";
+            public string HotUpdateDllLocalPath { get; } = $"{Application.streamingAssetsPath}/GameDlls/HotUpdate/";
+            public string HotUpdateDllRemoteUrl { get; } = $"file://{Application.streamingAssetsPath}/GameDlls/HotUpdate/";
         }
 
         private class DefaultPrepareProxy : IPrepareProxy
@@ -157,7 +219,6 @@ namespace UniPurity
 
             public void LoadHotUpdateDll(string fileName, byte[] dllBytes)
             {
-#if !UNITY_EDITOR
                 try
                 {
                     System.Reflection.Assembly.Load(dllBytes);
@@ -170,7 +231,6 @@ namespace UniPurity
                         FileName = fileName
                     };
                 }
-#endif
             }
         }
     }
