@@ -4,9 +4,6 @@
   "displayName": "UniPurity",
   "description": "Unity package for HybridCLR's runtime and editor utilities, it brings a simple usage of HybridCLR",
   "unity": "2021.3",
-  "dependencies": {
-    "com.focus-creative-games.hybridclr_unity": "https://gitee.com/focus-creative-games/hybridclr_unity.git"
-  },
   "keywords": [
     "unipurity",
     "purity"
