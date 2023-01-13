@@ -27,30 +27,30 @@ namespace Unipurity.Editor
         public static void MoveIOSDll() => MoveDllToStreamingAssets(BuildTarget.iOS);
 
 
-        private static string GetAOTDllPath(BuildTarget target) =>
-            $"{Application.streamingAssetsPath}/GameDlls/{target}/AOT";
+        private static string GetAOTDllPath() =>
+            $"{Application.streamingAssetsPath}/GameDlls/AOT";
 
-        private static string GetHotUpdateDllPath(BuildTarget target) =>
-            $"{Application.streamingAssetsPath}/GameDlls/{target}/HotUpdate";
+        private static string GetHotUpdateDllPath() =>
+            $"{Application.streamingAssetsPath}/GameDlls/HotUpdate";
 
-        private static string GetAOTDllManifestPath(BuildTarget target) =>
-            $"{Application.streamingAssetsPath}/{target}_AOTManifest.data";
+        private static string GetAOTDllManifestPath() =>
+            $"{Application.streamingAssetsPath}/GameDlls/AOTManifest.data";
 
-        private static string GetHotUpdateManifestPath(BuildTarget target) =>
-            $"{Application.streamingAssetsPath}/{target}_HotUpdateManifest.data";
+        private static string GetHotUpdateManifestPath() =>
+            $"{Application.streamingAssetsPath}/GameDlls/HotUpdateManifest.data";
 
         private static void MoveDllToStreamingAssets(BuildTarget target)
         {
             Debug.Log($"Moving {target}'s aot and hotupdate dlls to {Application.dataPath}/GameDlls/...");
             var sourcePath = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
-            var targetPath = GetAOTDllPath(target);
-            var manifestPath = GetAOTDllManifestPath(target);
-            CopyDlls(sourcePath, targetPath, manifestPath);
+            var targetPath = GetAOTDllPath();
+            var manifestPath = GetAOTDllManifestPath();
+            var aotDllList = CopyDlls(sourcePath, targetPath, manifestPath);
 
             sourcePath = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
-            targetPath = GetHotUpdateDllPath(target);
-            manifestPath = GetHotUpdateManifestPath(target);
-            CopyDlls(sourcePath, targetPath, manifestPath, new string[] { "Assembly-CSharp.dll" });
+            targetPath = GetHotUpdateDllPath();
+            manifestPath = GetHotUpdateManifestPath();
+            CopyDlls(sourcePath, targetPath, manifestPath, aotDllList);
 
             AssetDatabase.Refresh();
         }
@@ -63,7 +63,7 @@ namespace Unipurity.Editor
             AssetDatabase.Refresh();
         }
 
-        private static void CopyDlls(string sourcePath, string targetPath, string manifestPath, IEnumerable<string> excludes = null)
+        private static IEnumerable<string> CopyDlls(string sourcePath, string targetPath, string manifestPath, IEnumerable<string> excludes = null)
         {
             if (!Directory.Exists(sourcePath))
                 throw new IOException("Source direction not exist");
@@ -73,6 +73,7 @@ namespace Unipurity.Editor
             var files = Directory.GetFiles(sourcePath, "*.dll");
             var dontCopies = new HashSet<string>();
             var md5Dic = new Dictionary<string, string>();
+            var outputList = new List<string>();
             if (!(excludes is null))
             {
                 foreach (var ex in excludes)
@@ -83,6 +84,7 @@ namespace Unipurity.Editor
                 string fName = Path.GetFileName(f);
                 if (dontCopies.Contains(fName))
                     continue;
+                outputList.Add(fName);
                 File.Copy($"{sourcePath}/{fName}", $"{targetPath}/{fName}.byte");
                 md5Dic[$"{fName}.byte"] = Utils.Md5File(f);
             }
@@ -93,6 +95,8 @@ namespace Unipurity.Editor
                     fs.Write(Encoding.UTF8.GetBytes($"{kv.Key}:{kv.Value}\n"));
                 fs.Close();
             }
+
+            return outputList;
         }
 
         private static void CreateDllAssetBundles(string sourcePath, string targetPath, BuildTarget buildTarget)

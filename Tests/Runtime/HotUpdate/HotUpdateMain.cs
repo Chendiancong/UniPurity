@@ -1,10 +1,10 @@
-namespace HotUpdate
+namespace UnityPurity.Tests
 {
     public class HotUpdateMain
     {
         public void Show()
         {
-            UnityEngine.Debug.Log("Hello world");
+            UnityEngine.Debug.Log("Hello World");
         }
     }
 }
