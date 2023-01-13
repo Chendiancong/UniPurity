@@ -1,0 +1,15 @@
+{
+  "name": "com.cdc-single.uni-purity",
+  "version": "1.0.0",
+  "displayName": "UniPurity",
+  "description": "Unity package for HybridCLR's runtime and editor utilities, it brings a simple usage of HybridCLR",
+  "unity": "2021.3",
+  "keywords": [
+    "unipurity",
+    "purity"
+  ],
+  "author": {
+    "name": "chendiancong",
+    "email": "diancongchen@outlook.com"
+  }
+}
