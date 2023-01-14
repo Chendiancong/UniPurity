@@ -50,7 +50,12 @@ namespace Unipurity.Editor
             sourcePath = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
             targetPath = GetHotUpdateDllPath();
             manifestPath = GetHotUpdateManifestPath();
-            CopyDlls(sourcePath, targetPath, manifestPath, aotDllList);
+            List<string> hotupdateNames = SettingsUtil.HotUpdateAssemblyFilesExcludePreserved;
+            var excludeFiles = from file in aotDllList.Concat(Directory.GetFiles(sourcePath, "*.dll"))
+                               select Path.GetFileName(file) into fileName
+                               where hotupdateNames.IndexOf(fileName) < 0
+                               select fileName;
+            CopyDlls(sourcePath, targetPath, manifestPath, excludeFiles);
 
             AssetDatabase.Refresh();
         }
@@ -58,9 +63,12 @@ namespace Unipurity.Editor
         [MenuItem("UniPurity/Test")]
         public static void Test()
         {
-            Debug.Log($"Create directory {Application.streamingAssetsPath}/aotdlls");
-            Directory.CreateDirectory($"{Application.streamingAssetsPath}/aotdlls");
-            AssetDatabase.Refresh();
+            List<string> names = SettingsUtil.HotUpdateAssemblyNamesExcludePreserved;
+            List<string> files = SettingsUtil.HotUpdateAssemblyFilesExcludePreserved;
+            foreach (var name in names)
+                Debug.Log($"name:{name}");
+            foreach (var file in files)
+                Debug.Log($"file:{file}");
         }
 
         private static IEnumerable<string> CopyDlls(string sourcePath, string targetPath, string manifestPath, IEnumerable<string> excludes = null)
@@ -89,6 +97,8 @@ namespace Unipurity.Editor
                 md5Dic[$"{fName}.byte"] = Utils.Md5File(f);
             }
 
+            if (File.Exists(manifestPath))
+                File.Delete(manifestPath);
             using (var fs = new FileStream(manifestPath, FileMode.OpenOrCreate, FileAccess.ReadWrite))
             {
                 foreach (var kv in md5Dic)
@@ -97,37 +107,6 @@ namespace Unipurity.Editor
             }
 
             return outputList;
-        }
-
-        private static void CreateDllAssetBundles(string sourcePath, string targetPath, BuildTarget buildTarget)
-        {
-            if (!Directory.Exists(sourcePath))
-                throw new IOException("Source directory not exist");
-            if (Directory.Exists(targetPath))
-            {
-                var originFiles = Directory.GetFiles(targetPath);
-                foreach (var fpath in originFiles)
-                    File.Delete(fpath);
-            }
-            else
-                Directory.CreateDirectory(targetPath);
-
-            var files = new List<string>(Directory.GetFiles(sourcePath, "*.dll.byte"));
-            var build = new AssetBundleBuild();
-            var assetNames = from f in files
-                             where !f.EndsWith(".meta")
-                             select f.Replace(Application.dataPath, "Assets") into f1
-                             select f1.Replace("\\", "/");
-            build.assetBundleName = $"aotdlls";
-            build.assetNames = assetNames.ToArray();
-            foreach (var name in build.assetNames)
-                Debug.Log(name);
-            BuildPipeline.BuildAssetBundles(
-                targetPath,
-                new AssetBundleBuild[] { build },
-                BuildAssetBundleOptions.ForceRebuildAssetBundle,
-                buildTarget
-            );
         }
     }
 }
