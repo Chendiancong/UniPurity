@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using UnityEditor;
 using HybridCLR.Editor;
+using HybridCLR.Editor.Commands;
 
 namespace UniPurity.Editor
 {
@@ -24,7 +25,29 @@ namespace UniPurity.Editor
         [MenuItem("UniPurity/Move HybridCLR Dlls/IOS", priority = 203)]
         public static void MoveIOSDll() => MoveDllToStreamingAssets(BuildTarget.iOS);
 
-        [MenuItem("UniPurity/Settings", priority = 300)]
+        [MenuItem("UniPurity/Build/BuildAOT", priority = 300)]
+        public static void BuildAOT()
+        {
+            PrebuildCommand.GenerateAll();
+            MoveCurrentTargetDll();
+        }
+
+        [MenuItem("UniPurity/Build/BuildHotUpdate", priority = 301)]
+        public static void BuildHotUpdate()
+        {
+            CompileDllCommand.CompileDllActiveBuildTarget();
+            MoveCurrentTargetDll();
+        }
+
+        [MenuItem("UniPurity/Build/All", priority = 302)]
+        public static void BuildAll()
+        {
+            PrebuildCommand.GenerateAll();
+            CompileDllCommand.CompileDllActiveBuildTarget();
+            MoveCurrentTargetDll();
+        }
+
+        [MenuItem("UniPurity/Settings", priority = 400)]
         public static void SettingsCommand()
         {
             SettingsService.OpenProjectSettings("Project/UniPurity Settings");
@@ -45,7 +68,7 @@ namespace UniPurity.Editor
 
         private static void MoveDllToStreamingAssets(BuildTarget target)
         {
-            Debug.Log($"Moving {target}'s aot and hotupdate dlls to {Application.dataPath}/GameDlls/...");
+            Debug.Log($"[UniPurityCommands] Moving {target}'s aot and hotupdate dlls to {Application.dataPath}/GameDlls/...");
             var sourcePath = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
             var targetPath = GetAOTDllPath();
             var manifestPath = GetAOTDllManifestPath();
@@ -79,7 +102,7 @@ namespace UniPurity.Editor
         private static void CopyDlls(string sourcePath, string targetPath, string manifestPath, IEnumerable<string> includes = null)
         {
             if (!Directory.Exists(sourcePath))
-                throw new IOException("Source direction not exist");
+                throw new DirectoryNotFoundException($"[UniPurityCommands] {sourcePath}");
             if (Directory.Exists(targetPath))
                 Directory.Delete(targetPath, true);
             Directory.CreateDirectory(targetPath);
