@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Net;
 using UnityEngine;
 using UnityEngine.Networking;
 using HybridCLR;
@@ -66,10 +68,12 @@ namespace UniPurity
 
         public IEnumerator PrepareDlls()
         {
-#if UNITY_EDITOR
-            PostLoaded(new List<string>());
-            yield break;
-#else
+            if (Application.isEditor)
+            {
+                PostLoaded(new List<string>());
+                yield break;
+            }
+
             yield return 0;
             string manifestUrl = $"file:///{mConfig.HotUpdateDllManifestLocalPath}";
             string manifestRemoteUrl = mConfig.HotUpdateDllManifestRemoteUrl;
@@ -114,17 +118,13 @@ namespace UniPurity
             }
 
             //更新热更dll
+            ProgressInfo.sGroupType = LoadDllGroupType.UpdateDll;
+            ProgressInfo.sGroupTotal = needUpdateDllNames.Count;
+            ProgressInfo.sTotal = needUpdateDllNames.Count;
             for (int i = 0, len = needUpdateDllNames.Count; i < len; ++i)
             {
                 var dllName = needUpdateDllNames[i];
-                var pi = new ProgressInfo()
-                {
-                    fileName = needUpdateDllNames[i],
-                    groupType = LoadDllGroupType.HotUpdate,
-                    cur = i,
-                    groupTotal = len,
-                    total = len
-                };
+                var pi = ProgressInfo.QuickCreate(dllName, i);
                 PostProgress(ref pi);
                 string remoteUrl = $"{mConfig.HotUpdateDllRemoteUrl}/{dllName}?v={random}";
                 PostMessage($"Fetching {remoteUrl}");
@@ -137,14 +137,7 @@ namespace UniPurity
                 }
             }
             {
-                var pi = new ProgressInfo()
-                {
-                    fileName = "",
-                    groupType = LoadDllGroupType.HotUpdate,
-                    cur = needUpdateDllNames.Count,
-                    groupTotal = needUpdateDllNames.Count,
-                    total = needUpdateDllNames.Count
-                };
+                var pi = ProgressInfo.QuickCreate("", needUpdateDllNames.Count);
                 PostProgress(ref pi);
             }
 
@@ -195,7 +188,6 @@ namespace UniPurity
             }
 
             PostLoaded(new List<string>(aotFiles).Concat(hotupdateFiles));
-#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -353,6 +345,7 @@ namespace UniPurity
         {
             AOT,
             HotUpdate,
+            UpdateDll,
         }
 
         private class DefaultPrepareConfig : IPrepareConfig

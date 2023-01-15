@@ -1,13 +1,11 @@
 using System.Text;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using HybridCLR.Editor;
-using UniPurity;
 
-namespace Unipurity.Editor
+namespace UniPurity.Editor
 {
     internal static class UniPurityCommands
     {
@@ -25,6 +23,12 @@ namespace Unipurity.Editor
 
         [MenuItem("UniPurity/Move HybridCLR Dlls/IOS", priority = 203)]
         public static void MoveIOSDll() => MoveDllToStreamingAssets(BuildTarget.iOS);
+
+        [MenuItem("UniPurity/Settings", priority = 300)]
+        public static void SettingsCommand()
+        {
+            SettingsService.OpenProjectSettings("Project/UniPurity Settings");
+        }
 
 
         private static string GetAOTDllPath() =>
@@ -45,17 +49,18 @@ namespace Unipurity.Editor
             var sourcePath = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
             var targetPath = GetAOTDllPath();
             var manifestPath = GetAOTDllManifestPath();
-            var aotDllList = CopyDlls(sourcePath, targetPath, manifestPath);
+            CopyDlls(
+                sourcePath, targetPath, manifestPath,
+                UniPurityEditorSettings.Instance.GetAllNeedAOTFiles()
+            );
 
             sourcePath = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
             targetPath = GetHotUpdateDllPath();
             manifestPath = GetHotUpdateManifestPath();
-            List<string> hotupdateNames = SettingsUtil.HotUpdateAssemblyFilesExcludePreserved;
-            var excludeFiles = from file in aotDllList.Concat(Directory.GetFiles(sourcePath, "*.dll"))
-                               select Path.GetFileName(file) into fileName
-                               where hotupdateNames.IndexOf(fileName) < 0
-                               select fileName;
-            CopyDlls(sourcePath, targetPath, manifestPath, excludeFiles);
+            CopyDlls(
+                sourcePath, targetPath, manifestPath,
+                SettingsUtil.HotUpdateAssemblyFilesExcludePreserved
+            );
 
             AssetDatabase.Refresh();
         }
@@ -71,7 +76,7 @@ namespace Unipurity.Editor
                 Debug.Log($"file:{file}");
         }
 
-        private static IEnumerable<string> CopyDlls(string sourcePath, string targetPath, string manifestPath, IEnumerable<string> excludes = null)
+        private static void CopyDlls(string sourcePath, string targetPath, string manifestPath, IEnumerable<string> includes = null)
         {
             if (!Directory.Exists(sourcePath))
                 throw new IOException("Source direction not exist");
@@ -79,20 +84,18 @@ namespace Unipurity.Editor
                 Directory.Delete(targetPath, true);
             Directory.CreateDirectory(targetPath);
             var files = Directory.GetFiles(sourcePath, "*.dll");
-            var dontCopies = new HashSet<string>();
+            var needCopies = new HashSet<string>();
             var md5Dic = new Dictionary<string, string>();
-            var outputList = new List<string>();
-            if (!(excludes is null))
+            if (!(includes is null))
             {
-                foreach (var ex in excludes)
-                    dontCopies.Add(ex);
+                foreach (var ex in includes)
+                    needCopies.Add(ex);
             }
             foreach (var f in files)
             {
                 string fName = Path.GetFileName(f);
-                if (dontCopies.Contains(fName))
+                if (!needCopies.Contains(fName))
                     continue;
-                outputList.Add(fName);
                 File.Copy($"{sourcePath}/{fName}", $"{targetPath}/{fName}.byte");
                 md5Dic[$"{fName}.byte"] = Utils.Md5File(f);
             }
@@ -105,8 +108,6 @@ namespace Unipurity.Editor
                     fs.Write(Encoding.UTF8.GetBytes($"{kv.Key}:{kv.Value}\n"));
                 fs.Close();
             }
-
-            return outputList;
         }
     }
 }
