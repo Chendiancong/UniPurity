@@ -44,6 +44,8 @@ namespace UniPurity.Editor
 
         public IEnumerable<string> GetAllNeedAOTFiles()
         {
+            if (neededAOTAssemblies is null)
+                neededAOTAssemblies = new string[0];
             return new List<string>(staticNeededAOTAssemblies)
                 .Concat(neededAOTAssemblies)
                 .Select(name => name + ".dll");
