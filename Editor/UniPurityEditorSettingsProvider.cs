@@ -9,6 +9,8 @@ namespace UniPurity.Editor
         private SerializedObject _serializedObject;
         private SerializedProperty _staticNeededAOTAss;
         private SerializedProperty _neededAOTAss;
+        private SerializedProperty _defaultDllPathProp;
+        private SerializedProperty _customDllPathProp;
 
         public UniPurityEditorSettingsProvider() : base("Project/UniPurity Settings", SettingsScope.Project)
         { }
@@ -37,6 +39,10 @@ namespace UniPurity.Editor
             EditorGUILayout.PropertyField(_staticNeededAOTAss);
             GUI.enabled = true;
             EditorGUILayout.PropertyField(_neededAOTAss);
+            GUI.enabled = false;
+            EditorGUILayout.PropertyField(_defaultDllPathProp);
+            GUI.enabled = true;
+            EditorGUILayout.PropertyField(_customDllPathProp);
             if (EditorGUI.EndChangeCheck())
             {
                 _serializedObject.ApplyModifiedProperties();
@@ -51,6 +57,8 @@ namespace UniPurity.Editor
             _serializedObject = new SerializedObject(setting);
             _staticNeededAOTAss = _serializedObject.FindProperty("staticNeededAOTAssemblies");
             _neededAOTAss = _serializedObject.FindProperty("neededAOTAssemblies");
+            _defaultDllPathProp = _serializedObject.FindProperty("defaultDllPath");
+            _customDllPathProp = _serializedObject.FindProperty("customDllPath");
         }
 
         private void OnEditorFocused()

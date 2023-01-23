@@ -55,16 +55,16 @@ namespace UniPurity.Editor
 
 
         private static string GetAOTDllPath() =>
-            $"{Application.streamingAssetsPath}/GameDlls/AOT";
+            $"{UniPurityEditorSettings.Instance.GetDllPath()}/AOT";
 
         private static string GetHotUpdateDllPath() =>
-            $"{Application.streamingAssetsPath}/GameDlls/HotUpdate";
+            $"{UniPurityEditorSettings.Instance.GetDllPath()}/HotUpdate";
 
         private static string GetAOTDllManifestPath() =>
-            $"{Application.streamingAssetsPath}/GameDlls/AOTManifest.data";
+            $"{UniPurityEditorSettings.Instance.GetDllPath()}/AOTManifest.data";
 
         private static string GetHotUpdateManifestPath() =>
-            $"{Application.streamingAssetsPath}/GameDlls/HotUpdateManifest.data";
+            $"{UniPurityEditorSettings.Instance.GetDllPath()}/HotUpdateManifest.data";
 
         private static void MoveDllToStreamingAssets(BuildTarget target)
         {
