@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Net;
 using UnityEngine;
 using UnityEngine.Networking;
 using HybridCLR;
@@ -20,6 +19,7 @@ namespace UniPurity
         private LoadedHandler mOnLoaded;
         private ErrorHandler mOnError;
         private MessageHandler mOnMsg;
+        private InternalInstruction mLoadInstruction;
 
         public event ProgressHandler OnProgress
         {
@@ -44,6 +44,8 @@ namespace UniPurity
             add => mOnMsg += value;
             remove => mOnMsg -= value;
         }
+
+        public LoadStatus Status { get; private set; } = LoadStatus.NotLoad;
 
         public UniPurityPrepare() : this(new DefaultPrepareConfig(), new DefaultPrepareProxy()) { }
 
@@ -232,7 +234,7 @@ namespace UniPurity
             {
                 var ex = new UniPurityPrepareLoadException($"Fetch {request.url} error")
                 {
-                    Status = LoadStatus.NetWorkError,
+                    Status = ExceptionStatus.NetWorkError,
                     FileName = request.url
                 };
                 try { throw ex; }
@@ -319,7 +321,7 @@ namespace UniPurity
 
         public class UniPurityPrepareLoadException : Exception
         {
-            public LoadStatus Status { get; set; } = LoadStatus.OK;
+            public ExceptionStatus Status { get; set; } = ExceptionStatus.OK;
             public LoadImageErrorCode ErrorCode { get; set; } = LoadImageErrorCode.OK;
             public string FileName { get; set; }
 
@@ -334,6 +336,13 @@ namespace UniPurity
         }
 
         public enum LoadStatus
+        {
+            NotLoad,
+            Loading,
+            Loaded,
+        }
+
+        public enum ExceptionStatus
         {
             OK = 0,
             NetWorkError,
@@ -398,6 +407,18 @@ namespace UniPurity
                     };
                 }
 #endif
+            }
+        }
+
+        private class InternalInstruction : CustomYieldInstruction
+        {
+            private Func<bool> checker;
+
+            public override bool keepWaiting => checker is null ? false : checker();
+
+            public InternalInstruction(Func<bool> checker)
+            {
+                this.checker = checker;
             }
         }
     }
