@@ -15,7 +15,7 @@ namespace UniPurity
         }
 
         /// <summary>
-        /// 计算字符串的md5
+        /// 璁＄畻瀛楃涓茬殑md5
         /// </summary>
         public static string Md5(string source)
         {
@@ -33,7 +33,7 @@ namespace UniPurity
         }
 
         /// <summary>
-        /// 计算文件的md5
+        /// 璁＄畻鏂囦欢鐨刴d5
         /// </summary>
         public static string Md5File(string filePath)
         {

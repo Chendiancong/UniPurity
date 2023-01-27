@@ -72,8 +72,8 @@ namespace UniPurity
         {
             if (Application.isEditor)
             {
-                PostLoaded(new List<string>());
-                yield break;
+                //PostLoaded(new List<string>());
+                //yield break;
             }
 
             yield return 0;
@@ -123,70 +123,88 @@ namespace UniPurity
             ProgressInfo.sGroupType = LoadDllGroupType.UpdateDll;
             ProgressInfo.sGroupTotal = needUpdateDllNames.Count;
             ProgressInfo.sTotal = needUpdateDllNames.Count;
-            for (int i = 0, len = needUpdateDllNames.Count; i < len; ++i)
+            using (var group = new WebRequestGroup())
             {
-                var dllName = needUpdateDllNames[i];
-                var pi = ProgressInfo.QuickCreate(dllName, i);
-                PostProgress(ref pi);
-                string remoteUrl = $"{mConfig.HotUpdateDllRemoteUrl}/{dllName}?v={random}";
-                PostMessage($"Fetching {remoteUrl}");
-                using (var request = UnityWebRequest.Get(remoteUrl))
+                Dictionary<string, string> url2Name = new Dictionary<string, string>(needUpdateDllNames.Count);
+                int counter = 0;
+                group.OnComplete += (UnityWebRequest request) =>
                 {
-                    yield return request.SendWebRequest();
-                    CheckRequestFail(request);
+                    string dllName;
+                    if (!url2Name.TryGetValue(request.url, out dllName))
+                        return;
                     if (request.downloadedBytes > 0)
                         File.WriteAllBytes($"{mConfig.HotUpdateDllLocalPath}/{dllName}", request.downloadHandler.data);
+                    var pi = ProgressInfo.QuickCreate(dllName, ++counter);
+                    PostProgress(ref pi);
+                };
+                foreach (var dllName in needUpdateDllNames)
+                {
+                    string remoteUrl = $"{mConfig.HotUpdateDllRemoteUrl}/{dllName}?v={random}";
+                    var request = group.Request(remoteUrl);
+                    url2Name[request.url] = dllName;
                 }
-            }
-            {
-                var pi = ProgressInfo.QuickCreate("", needUpdateDllNames.Count);
-                PostProgress(ref pi);
+                yield return group;
             }
 
             string[] aotFiles = Directory.GetFiles(mConfig.AOTDllLocalPath, "*.byte");
             string[] hotupdateFiles = Directory.GetFiles(mConfig.HotUpdateDllLocalPath, "*.byte");
             int aotLen = aotFiles.Length;
             int hotupdateLen = hotupdateFiles.Length;
-            int progress = 0;
             //加载aotdll
             ProgressInfo.sGroupType = LoadDllGroupType.AOT;
             ProgressInfo.sGroupTotal = aotLen;
             ProgressInfo.sTotal = aotLen + hotupdateLen;
-            foreach (string file in aotFiles)
+            using (var group = new WebRequestGroup())
             {
-                var pi = ProgressInfo.QuickCreate(file, progress++);
-                PostProgress(ref pi);
-                string url = $"file:///{file}";
-                using (UnityWebRequest request = UnityWebRequest.Get(url))
+                Dictionary<string, string> url2File = new Dictionary<string, string>();
+                int counter = 0;
+                group.OnComplete += (UnityWebRequest request) =>
                 {
-                    yield return request.SendWebRequest();
-                    CheckRequestFail(request);
+                    string file;
+                    if (!url2File.TryGetValue(request.url, out file))
+                        return;
                     if (request.downloadedBytes > 0)
                         mProxy.LoadAOTDll(file, request.downloadHandler.data);
+
+                    var pi = ProgressInfo.QuickCreate(file, ++counter);
+                    PostProgress(ref pi);
+                };
+
+                foreach (var file in aotFiles)
+                {
+                    string url = $"file:///{file}";
+                    var request = group.Request(url);
+                    url2File[url] = file;
                 }
-                yield return 0;
-            }
-            {
-                var pi = ProgressInfo.QuickCreate("", progress++);
-                PostProgress(ref pi);
+                yield return group;
             }
 
             //加载热更dll
             ProgressInfo.sGroupType = LoadDllGroupType.HotUpdate;
             ProgressInfo.sGroupTotal = hotupdateLen;
-            foreach (var file in hotupdateFiles)
+            using (var group = new WebRequestGroup())
             {
-                var pi = ProgressInfo.QuickCreate(file, progress++ - aotLen);
-                PostProgress(ref pi);
-                string url = $"file:///{file}";
-                using (UnityWebRequest request = UnityWebRequest.Get(url))
+                Dictionary<string, string> url2File = new Dictionary<string, string>();
+                int counter = 0;
+                group.OnComplete += (UnityWebRequest request) =>
                 {
-                    yield return request.SendWebRequest();
-                    CheckRequestFail(request);
+                    string file;
+                    if (!url2File.TryGetValue(request.url, out file))
+                        return;
                     if (request.downloadedBytes > 0)
                         mProxy.LoadHotUpdateDll(file, request.downloadHandler.data);
+
+                    var pi = ProgressInfo.QuickCreate(file, ++counter);
+                    PostProgress(ref pi);
+                };
+
+                foreach (var file in hotupdateFiles)
+                {
+                    string url = $"file:///{file}";
+                    var request = group.Request(url);
+                    url2File[request.url] = file;
                 }
-                yield return 0;
+                yield return group;
             }
 
             PostLoaded(new List<string>(aotFiles).Concat(hotupdateFiles));
