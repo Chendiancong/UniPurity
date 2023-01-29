@@ -11,19 +11,19 @@ namespace UniPurity.Editor
     internal static class UniPurityCommands
     {
         [MenuItem("UniPurity/Move HybridCLR Dlls/ActiveTarget", priority = 100)]
-        public static void MoveCurrentTargetDll() => MoveDllToStreamingAssets(EditorUserBuildSettings.activeBuildTarget);
+        public static void MoveCurrentTargetDll() => MoveDllToTargetPath(EditorUserBuildSettings.activeBuildTarget);
 
         [MenuItem("UniPurity/Move HybridCLR Dlls/Win32", priority = 200)]
-        public static void MoveWin32Dll() => MoveDllToStreamingAssets(BuildTarget.StandaloneWindows);
+        public static void MoveWin32Dll() => MoveDllToTargetPath(BuildTarget.StandaloneWindows);
 
         [MenuItem("UniPurity/Move HybridCLR Dlls/Win64", priority = 201)]
-        public static void MoveWin64Dll() => MoveDllToStreamingAssets(BuildTarget.StandaloneWindows64);
+        public static void MoveWin64Dll() => MoveDllToTargetPath(BuildTarget.StandaloneWindows64);
 
         [MenuItem("UniPurity/Move HybridCLR Dlls/Android", priority = 202)]
-        public static void MoveAndroidDll() => MoveDllToStreamingAssets(BuildTarget.Android);
+        public static void MoveAndroidDll() => MoveDllToTargetPath(BuildTarget.Android);
 
         [MenuItem("UniPurity/Move HybridCLR Dlls/IOS", priority = 203)]
-        public static void MoveIOSDll() => MoveDllToStreamingAssets(BuildTarget.iOS);
+        public static void MoveIOSDll() => MoveDllToTargetPath(BuildTarget.iOS);
 
         [MenuItem("UniPurity/Build/BuildAOT", priority = 300)]
         public static void BuildAOT()
@@ -53,6 +53,10 @@ namespace UniPurity.Editor
             SettingsService.OpenProjectSettings("Project/UniPurity Settings");
         }
 
+        public static void BuildWithTarget(BuildTarget target)
+        {
+
+        }
 
         private static string GetAOTDllPath() =>
             $"{UniPurityEditorSettings.Instance.GetDllPath()}/AOT";
@@ -66,7 +70,7 @@ namespace UniPurity.Editor
         private static string GetHotUpdateManifestPath() =>
             $"{UniPurityEditorSettings.Instance.GetDllPath()}/HotUpdateManifest.data";
 
-        private static void MoveDllToStreamingAssets(BuildTarget target)
+        private static void MoveDllToTargetPath(BuildTarget target)
         {
             Debug.Log($"[UniPurityCommands] Moving {target}'s aot and hotupdate dlls to {Application.dataPath}/GameDlls/...");
             var sourcePath = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);

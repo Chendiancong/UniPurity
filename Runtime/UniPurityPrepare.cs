@@ -19,7 +19,6 @@ namespace UniPurity
         private LoadedHandler mOnLoaded;
         private ErrorHandler mOnError;
         private MessageHandler mOnMsg;
-        private InternalInstruction mLoadInstruction;
 
         public event ProgressHandler OnProgress
         {
@@ -72,8 +71,8 @@ namespace UniPurity
         {
             if (Application.isEditor)
             {
-                //PostLoaded(new List<string>());
-                //yield break;
+                PostLoaded(new List<string>());
+                yield break;
             }
 
             yield return 0;
