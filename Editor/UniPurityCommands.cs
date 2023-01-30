@@ -53,9 +53,37 @@ namespace UniPurity.Editor
             SettingsService.OpenProjectSettings("Project/UniPurity Settings");
         }
 
-        public static void BuildWithTarget(BuildTarget target)
+        public static void BuildAOTWithTarget(BuildTarget target)
         {
+            Debug.Log($"[UniPurityCommands] Build aot dlls for {target}");
+            StripAOTDllCommand.GenerateStripedAOTDlls(target, EditorUserBuildSettings.selectedBuildTargetGroup);
+            MethodBridgeGeneratorCommand.GenerateMethodBridge(target);
+            ReversePInvokeWrapperGeneratorCommand.GenerateReversePInvokeWrapper(target);
+            AOTReferenceGeneratorCommand.GenerateAOTGenericReference(target);
+        }
 
+        public static void BuildHotUpdateWithTarget(BuildTarget target)
+        {
+            Debug.Log($"[UniPurityCommands] Build hotupdate dlls for {target}");
+            CompileDllCommand.CompileDll(target);
+            Il2CppDefGeneratorCommand.GenerateIl2CppDef();
+            LinkGeneratorCommand.GenerateLinkXml(target);
+        }
+
+        public static void BuildAllWithTarget(BuildTarget target)
+        {
+            BuildHotUpdateWithTarget(target);
+            BuildAOTWithTarget(target);
+        }
+
+        public static void CopyAOTDllWithTarget(BuildTarget target)
+        {
+            MoveDllToTargetPath(target, mActionCopyAOTDll);
+        }
+
+        public static void CopyHotUpdateDllWithTarget(BuildTarget target)
+        {
+            MoveDllToTargetPath(target, mActionCopyHotUpdateDll);
         }
 
         private static string GetAOTDllPath() =>
@@ -70,24 +98,33 @@ namespace UniPurity.Editor
         private static string GetHotUpdateManifestPath() =>
             $"{UniPurityEditorSettings.Instance.GetDllPath()}/HotUpdateManifest.data";
 
-        private static void MoveDllToTargetPath(BuildTarget target)
+        private static readonly int mActionCopyAOTDll = 1 << 0;
+        private static readonly int mActionCopyHotUpdateDll = 1 << 1;
+        private static void MoveDllToTargetPath(BuildTarget target, int action = 1 | 2)
         {
-            Debug.Log($"[UniPurityCommands] Moving {target}'s aot and hotupdate dlls to {Application.dataPath}/GameDlls/...");
-            var sourcePath = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
-            var targetPath = GetAOTDllPath();
-            var manifestPath = GetAOTDllManifestPath();
-            CopyDlls(
-                sourcePath, targetPath, manifestPath,
-                UniPurityEditorSettings.Instance.GetAllNeedAOTFiles()
-            );
+            if ((action & mActionCopyAOTDll) > 0)
+            {
+                var sourcePath = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
+                var targetPath = GetAOTDllPath();
+                var manifestPath = GetAOTDllManifestPath();
+                Debug.Log($"[UniPurityCommands] Moving {target}'s aot dlls to {targetPath}");
+                CopyDlls(
+                    sourcePath, targetPath, manifestPath,
+                    UniPurityEditorSettings.Instance.GetAllNeedAOTFiles()
+                );
+            }
 
-            sourcePath = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
-            targetPath = GetHotUpdateDllPath();
-            manifestPath = GetHotUpdateManifestPath();
-            CopyDlls(
-                sourcePath, targetPath, manifestPath,
-                SettingsUtil.HotUpdateAssemblyFilesExcludePreserved
-            );
+            if ((action & mActionCopyHotUpdateDll) > 0)
+            {
+                var sourcePath = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
+                var targetPath = GetHotUpdateDllPath();
+                var manifestPath = GetHotUpdateManifestPath();
+                Debug.Log($"[UniPurityCommands] Moving {target}'s hotupdate dlls to {targetPath}");
+                CopyDlls(
+                    sourcePath, targetPath, manifestPath,
+                    SettingsUtil.HotUpdateAssemblyFilesExcludePreserved
+                );
+            }
 
             AssetDatabase.Refresh();
         }

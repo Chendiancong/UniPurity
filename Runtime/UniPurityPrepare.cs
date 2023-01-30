@@ -399,7 +399,7 @@ namespace UniPurity
                 {
                     var ex = new UniPurityPrepareLoadException()
                     {
-                        Status = LoadStatus.AOTAssemblyError,
+                        Status = ExceptionStatus.AOTAssemblyError,
                         ErrorCode = err,
                         FileName = fileName
                     };
@@ -419,7 +419,7 @@ namespace UniPurity
                 {
                     throw new UniPurityPrepareLoadException(e)
                     {
-                        Status = LoadStatus.HotUpdateAssemblyError,
+                        Status = ExceptionStatus.HotUpdateAssemblyError,
                         FileName = fileName
                     };
                 }

@@ -13,13 +13,21 @@ namespace UniPurity.Editor
         {
             get
             {
-                if (mInstance is null)
+                if (!mInstance)
                 {
-                    var objs = InternalEditorUtility.LoadSerializedFileAndForget(GetFilePath());
-                    mInstance = objs.Length > 0 ? (UniPurityEditorSettings)objs[0] : CreateInstance<UniPurityEditorSettings>();
+                    mInstance = NewIns();
                 }
                 return mInstance;
             }
+        }
+
+        public static UniPurityEditorSettings NewIns()
+        {
+            var objs = InternalEditorUtility.LoadSerializedFileAndForget(GetFilePath());
+            var instance = objs.Length > 0 ?
+                objs[0] as UniPurityEditorSettings :
+                CreateInstance<UniPurityEditorSettings>();
+            return instance;
         }
 
         [Header("补充元数据的aot dll程序集")]
@@ -40,7 +48,7 @@ namespace UniPurity.Editor
 
         public void Save()
         {
-            if (mInstance is null)
+            if (!mInstance)
                 return;
             string filePath = GetFilePath();
             string directoryName = Path.GetDirectoryName(filePath);
