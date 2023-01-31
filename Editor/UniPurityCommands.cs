@@ -10,49 +10,6 @@ namespace UniPurity.Editor
 {
     internal static class UniPurityCommands
     {
-        [MenuItem("UniPurity/Move HybridCLR Dlls/ActiveTarget", priority = 100)]
-        public static void MoveCurrentTargetDll() => MoveDllToTargetPath(EditorUserBuildSettings.activeBuildTarget);
-
-        [MenuItem("UniPurity/Move HybridCLR Dlls/Win32", priority = 200)]
-        public static void MoveWin32Dll() => MoveDllToTargetPath(BuildTarget.StandaloneWindows);
-
-        [MenuItem("UniPurity/Move HybridCLR Dlls/Win64", priority = 201)]
-        public static void MoveWin64Dll() => MoveDllToTargetPath(BuildTarget.StandaloneWindows64);
-
-        [MenuItem("UniPurity/Move HybridCLR Dlls/Android", priority = 202)]
-        public static void MoveAndroidDll() => MoveDllToTargetPath(BuildTarget.Android);
-
-        [MenuItem("UniPurity/Move HybridCLR Dlls/IOS", priority = 203)]
-        public static void MoveIOSDll() => MoveDllToTargetPath(BuildTarget.iOS);
-
-        [MenuItem("UniPurity/Build/BuildAOT", priority = 300)]
-        public static void BuildAOT()
-        {
-            PrebuildCommand.GenerateAll();
-            MoveCurrentTargetDll();
-        }
-
-        [MenuItem("UniPurity/Build/BuildHotUpdate", priority = 301)]
-        public static void BuildHotUpdate()
-        {
-            CompileDllCommand.CompileDllActiveBuildTarget();
-            MoveCurrentTargetDll();
-        }
-
-        [MenuItem("UniPurity/Build/All", priority = 302)]
-        public static void BuildAll()
-        {
-            PrebuildCommand.GenerateAll();
-            CompileDllCommand.CompileDllActiveBuildTarget();
-            MoveCurrentTargetDll();
-        }
-
-        [MenuItem("UniPurity/Settings", priority = 400)]
-        public static void SettingsCommand()
-        {
-            SettingsService.OpenProjectSettings("Project/UniPurity Settings");
-        }
-
         public static void BuildAOTWithTarget(BuildTarget target)
         {
             Debug.Log($"[UniPurityCommands] Build aot dlls for {target}");

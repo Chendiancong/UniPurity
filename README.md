@@ -5,15 +5,17 @@ HybridCLR的说明文档：https://focus-creative-games.github.io/hybridclr/abou
 
 ## 功能
 ### Editor功能
-提供了整合HybridCLR命令的功能，主要包含了：1.编译dll，包括aot和热更dll；2.拷贝dll到自定义的目录   
-菜单功能   
-- UniPurity-Move HybridCLR Dlls：用于将编译好的aot和热更dll拷贝到设定的目录，默认为StreamingAssets/GameDlls/，也可以设定成别的目录   
-- UniPurity-Build-BuildAOT：先调用HybridCLR-Generate-All命令，然后再将执行一次拷贝当前平台dll的命令   
-- UniPurity-Build-BuildHotUpdate：先调用HybridCLR-CompleDll-ActiveBuildTarget命令，然后再执行一次拷贝当前平台dll的命令   
-- UniPurity-Build-All：依次执行HybridCLR-Generate-All和HybridCLR-CompileDll-ActiveBuildTarget，然后再执行一IC拷贝当前平台dll的命令   
+提供了整合HybridCLR命令的功能，这些操作都集合在UniPurity/Settings窗口里面，包括：
+- 添加补充元数据的aot程序集   
+- 自定义程序集的最终输出目录   
+- 根据平台，基于hclr工具链对脚本进行构建   
+- 基于构建得到的程序集，生成md5清单文件，并将程序集和清单文件输出到指定目录   
 
 ### Runtime功能
-提供了一个可定制的dll加载器，该加载器主要执行三项工作：1.加载指定的aot dll以补充元数据；2.更新热更dll；3.加载热更dll   
+提供了一个可定制的dll加载器，该加载器主要执行这些工作：   
+- 通过对比清单文件，下载并更新本地热更新程序集   
+- 加载指定的aot程序集，补充元数据   
+- 加载热更新程序集
 可以通过这个方法来完成加载器的任务：
 ```CSharp
 using UniPurity;

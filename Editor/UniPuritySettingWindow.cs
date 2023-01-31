@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,15 +15,17 @@ namespace UniPurity.Editor
         private SerializedProperty mNeededAOTAssProp;
         private SerializedProperty mDefaultDllPathProp;
         private SerializedProperty mCustomDllPathProp;
-        private GUIContent mGUIContent_SaveSetting = new GUIContent("±£¥Ê…Ë÷√");
-        private GUIContent mGUIContent_BuildSetting = new GUIContent("ππΩ®…Ë÷√");
-        private GUIContent mGUIContent_TargetSelect = new GUIContent("ƒø±Í∆ΩÃ®");
-        private GUIContent mGUIContent_BuildOptions = new GUIContent("ππΩ®—°œÓ");
-        private GUIContent mGUIContent_OutputOptions = new GUIContent(" ‰≥ˆ¥¶¿Ì");
-        private GUIContent mGUIContent_Build = new GUIContent("ø™ º");
+        private GUIContent mGUIContent_SaveSetting = new GUIContent("‰øùÂ≠òËÆæÁΩÆ");
+        private GUIContent mGUIContent_BuildSetting = new GUIContent("ÊûÑÂª∫ËÆæÁΩÆ");
+        private GUIContent mGUIContent_TargetSelect = new GUIContent("ÁõÆÊ†áÂπ≥Âè∞");
+        private GUIContent mGUIContent_BuildOptions = new GUIContent("ÊûÑÂª∫ÈÄâÈ°π");
+        private GUIContent mGUIContent_OutputOptions = new GUIContent("ËæìÂá∫Â§ÑÁêÜ");
+        private GUIContent mGUIContent_Build = new GUIContent("ÂºÄÂßã");
         private GUIStyle mStyle_box;
         private bool mIsFocus = false;
-        private bool mIsBuilding = false;
+        private bool mIsProcessBuilding = false;
+
+        private bool mIsBuilding => mIsProcessBuilding || BuildPipeline.isBuildingPlayer;
 
         private GUIContent[] mTargetOptionContents = new GUIContent[]
         {
@@ -44,22 +48,24 @@ namespace UniPurity.Editor
 
         private GUIContent[] mBuildOptionContents = new GUIContent[]
         {
-            new GUIContent("ππΩ®»´≤ø"),
-            new GUIContent("ΩˆππΩ®aot≤ø∑÷"),
-            new GUIContent("ΩˆππΩ®»»∏¸≤ø∑÷")
+            new GUIContent("ÊûÑÂª∫ÂÖ®ÈÉ®"),
+            new GUIContent("‰ªÖÊûÑÂª∫aotÈÉ®ÂàÜ"),
+            new GUIContent("‰ªÖÊûÑÂª∫ÁÉ≠Êõ¥ÈÉ®ÂàÜ"),
+            new GUIContent("‰∏çËøõË°åÊûÑÂª∫")
         };
         private ThisBuildOption[] mBuildOptions = new ThisBuildOption[]
         {
             ThisBuildOption.All,
             ThisBuildOption.AOT,
-            ThisBuildOption.HotUpdate
+            ThisBuildOption.HotUpdate,
+            ThisBuildOption.None
         };
         private int mCurBuildOptionId = 0;
 
         private GUIContent[] mOutputOptionContents = new GUIContent[]
         {
-            new GUIContent("øΩ±¥dllµΩ÷∏∂®ƒø¬º"),
-            new GUIContent("≤ªøΩ±¥dll")
+            new GUIContent("Êã∑Ë¥ùdllÂà∞ÊåáÂÆöÁõÆÂΩï"),
+            new GUIContent("‰∏çÊã∑Ë¥ùdll")
         };
         private ThisOutputOption[] mOutputOptions = new ThisOutputOption[]
         {
@@ -114,6 +120,8 @@ namespace UniPurity.Editor
 
         private void InitProps()
         {
+            //UnityÂú®BuidPipeline.BuildPlayerÁöÑÊó∂ÂÄô‰ºöÂõûÊî∂ÊéâÊâÄÊúâÁöÑScriptableObjectÔºå‰ªéËÄåÈÄ†ÊàêmSerializedObjectÂ§±Êïà
+            //ÊâÄ‰ª•Ë¶ÅÊåÅÁª≠Âà§Êñ≠mSerializedObject.targetObjectÁöÑÊúâÊïàÊÄß
             if (mSerializedObject is not null && mSerializedObject.targetObject)
                 return;
             mSerializedObject?.Dispose();
@@ -132,13 +140,25 @@ namespace UniPurity.Editor
             }
         }
 
+        private void TryCopyDllWithTarget(BuildTarget target, Action<BuildTarget> action, string dirErrorMsg = null)
+        {
+            try { action(target); }
+            catch (DirectoryNotFoundException e)
+            {
+                Debug.Log(e.Message);
+                if (!string.IsNullOrEmpty(dirErrorMsg))
+                    Debug.Log(dirErrorMsg);
+            }
+            catch { throw; }
+        }
+
         private IEnumerator ProcessBuild()
         {
-            mIsBuilding = true;
+            mIsProcessBuilding = true;
             string targetStr = mTargetOptionContents[mCurTargetOptionId].text;
             string buildOptionStr = mBuildOptionContents[mCurBuildOptionId].text;
             string outputOptionStr = mOutputOptionContents[mCurOutputOptionId].text;
-            Debug.Log($"ππΩ® {targetStr}, {buildOptionStr}, {outputOptionStr}");
+            Debug.Log($"ÊûÑÂª∫ {targetStr}, {buildOptionStr}, {outputOptionStr}");
             yield return new EditorWaitForSeconds(0.3f);
 
             BuildTarget target;
@@ -162,11 +182,11 @@ namespace UniPurity.Editor
 
             if (outputOption == ThisOutputOption.CopyDll)
             {
-                UniPurityCommands.CopyAOTDllWithTarget(target);
-                UniPurityCommands.CopyHotUpdateDllWithTarget(target);
+                TryCopyDllWithTarget(target, UniPurityCommands.CopyAOTDllWithTarget, "ÈúÄË¶ÅÂÖàÊûÑÂª∫aotÈÉ®ÂàÜ");
+                TryCopyDllWithTarget(target, UniPurityCommands.CopyHotUpdateDllWithTarget, "ÈúÄË¶ÅÂÖàÊûÑÂª∫ÁÉ≠Êõ¥ÈÉ®ÂàÜ");
             }
 
-            mIsBuilding = false;
+            mIsProcessBuilding = false;
         }
 
         private Vector2 mScrollPos = Vector2.zero;
@@ -175,60 +195,77 @@ namespace UniPurity.Editor
             InitProps();
             InitStyles();
             mScrollPos = EditorGUILayout.BeginScrollView(mScrollPos);
-            PropertyField(mStaticNeededAOTAssProp, false);
-            PropertyField(mNeededAOTAssProp);
-            PropertyField(mDefaultDllPathProp, false);
-            PropertyField(mCustomDllPathProp);
-            Rect rect;
-
-            EditorGUILayout.Space();
-
-            EditorGUILayout.BeginVertical();
-
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            if (LayoutButton(mGUIContent_SaveSetting))
             {
-                SaveObject();
-                Debug.Log($"±£¥Ê≥…π¶");
+                PropertyField(mStaticNeededAOTAssProp, false);
+                PropertyField(mNeededAOTAssProp);
+                PropertyField(mDefaultDllPathProp, false);
+                PropertyField(mCustomDllPathProp);
+                Rect rect;
+
+                EditorGUILayout.Space();
+
+                EditorGUILayout.BeginVertical();
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    {
+                        GUILayout.FlexibleSpace();
+                        if (LayoutButton(mGUIContent_SaveSetting))
+                        {
+                            SaveObject();
+                            Debug.Log($"‰øùÂ≠òÊàêÂäü");
+                        }
+                        GUILayout.FlexibleSpace();
+                    }
+                    EditorGUILayout.EndHorizontal();
+
+                    EditorGUILayout.Space();
+
+                    EditorGUILayout.BeginVertical(mStyle_box);
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        {
+                            GUILayout.FlexibleSpace();
+                            GUILayout.Label(mGUIContent_BuildSetting);
+                            GUILayout.FlexibleSpace();
+                        }
+                        EditorGUILayout.EndHorizontal();
+
+                        rect = EditorGUILayout.GetControlRect();
+                        rect.width = 100;
+                        GUI.Label(rect, mGUIContent_TargetSelect);
+                        rect.x += 120;
+                        rect.width = 200;
+                        mCurTargetOptionId = EditorGUI.Popup(rect, mCurTargetOptionId, mTargetOptionContents);
+                        rect = EditorGUILayout.GetControlRect();
+                        rect.width = 100;
+                        GUI.Label(rect, mGUIContent_BuildOptions);
+                        rect.x += 120;
+                        rect.width = 200;
+                        mCurBuildOptionId = EditorGUI.Popup(rect, mCurBuildOptionId, mBuildOptionContents);
+                        rect = EditorGUILayout.GetControlRect();
+                        rect.width = 100;
+                        GUI.Label(rect, mGUIContent_OutputOptions);
+
+                        rect.x += 120;
+                        rect.width = 200;
+                        mCurOutputOptionId = EditorGUI.Popup(rect, mCurOutputOptionId, mOutputOptionContents);
+
+                        EditorGUILayout.Space();
+
+                        EditorGUILayout.BeginHorizontal();
+                        {
+                            GUILayout.FlexibleSpace();
+                            if (LayoutButton(mGUIContent_Build))
+                                EditorWindowCoroutineExtension.StartCoroutine(this, ProcessBuild());
+                            GUILayout.FlexibleSpace();
+                        }
+                        EditorGUILayout.EndHorizontal();
+                    }
+                    EditorGUILayout.EndVertical();
+
+                }
+                EditorGUILayout.EndVertical();
             }
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.Space();
-
-            EditorGUILayout.BeginVertical(mStyle_box);
-            rect = EditorGUILayout.GetControlRect();
-            GUI.Label(rect, mGUIContent_BuildSetting);
-            rect = EditorGUILayout.GetControlRect();
-            rect.width = 100;
-            GUI.Label(rect, mGUIContent_TargetSelect);
-            rect.x += 120;
-            rect.width = 200;
-            mCurTargetOptionId = EditorGUI.Popup(rect, mCurTargetOptionId, mTargetOptionContents);
-            rect = EditorGUILayout.GetControlRect();
-            rect.width = 100;
-            GUI.Label(rect, mGUIContent_BuildOptions);
-            rect.x += 120;
-            rect.width = 200;
-            mCurBuildOptionId = EditorGUI.Popup(rect, mCurBuildOptionId, mBuildOptionContents);
-            rect = EditorGUILayout.GetControlRect();
-            rect.width = 100;
-            GUI.Label(rect, mGUIContent_OutputOptions);
-            rect.x += 120;
-            rect.width = 200;
-            mCurOutputOptionId = EditorGUI.Popup(rect, mCurOutputOptionId, mOutputOptionContents);
-            EditorGUILayout.Space();
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            if (LayoutButton(mGUIContent_Build))
-                EditorWindowCoroutineExtension.StartCoroutine(this, ProcessBuild());
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndVertical();
-
-            EditorGUILayout.EndVertical();
-
             EditorGUILayout.EndScrollView();
         }
 
@@ -257,6 +294,7 @@ namespace UniPurity.Editor
 
         private enum ThisBuildOption
         {
+            None,
             AOT,
             HotUpdate,
             All
