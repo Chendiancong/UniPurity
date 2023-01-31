@@ -1,6 +1,6 @@
 # UniPurity
-focus-creative-games的HybridCLR项目提供了一种全新的、基于il2cpp的脚本热更新方案。它不采用虚拟机的方式，通过il2cpp以解释器的方式执行IL代码，相比于传统方案，可以做到aot和hotupdate代码几乎无感的融合，并且能够直接使用到C#和Unity的绝大部分特性和api，在开发效率上应该会有不错的提升。   
-这个项目是在HybridCLR的基础上对于一些打包和游戏启动工作流的完善，也是对其的一次学习和尝试。   
+- focus-creative-games的HybridCLR项目提供了一种全新的、基于il2cpp的脚本热更新方案。它扩展了il2cpp虚拟机，以解释器的方式执行IL，相比于传统方案，可以做到aot和hotupdate代码几乎无感的融合，并且能够直接使用到C#和Unity的绝大部分特性和api，在开发效率上应该会有不错的提升。   
+这个项目是在HybridCLR的基础上对于一些构建和游戏启动工作流的完善，也是对其的一次学习和尝试。   
 HybridCLR的说明文档：https://focus-creative-games.github.io/hybridclr/about/#%E6%96%87%E6%A1%A3
 
 ## 功能

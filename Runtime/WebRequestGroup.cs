@@ -33,7 +33,7 @@ namespace UniPurity
 
         public void Dispose()
         {
-
+            mOnComplete = null;
         }
 
         private void OnRequestComplete(AsyncOperation op)
