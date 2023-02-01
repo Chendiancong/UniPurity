@@ -12,7 +12,7 @@ HybridCLR的说明文档：https://focus-creative-games.github.io/hybridclr/abou
 - 基于构建得到的程序集，生成md5清单文件，并将程序集和清单文件输出到指定目录   
 
 ### Runtime功能
-提供了一个可定制的dll加载器，该加载器主要执行这些工作：   
+提供了一个可定制的dll加载器UniPurityPrepare，该加载器主要执行这些工作：   
 - 通过对比清单文件，下载并更新本地热更新程序集   
 - 加载指定的aot程序集，补充元数据   
 - 加载热更新程序集
@@ -39,7 +39,7 @@ private IEnumerator Init()
 加载器的实现位于同名的UniPurityPrepare.cs里面   
 对于程序集的划分，并没有什么特别的要求，做好设置就可以了，文档里面也有相关描述   
 #### 可能会出现的报错
-1.在使用2021-1.0版本的HybridCLR的时候，调用HybridCLR-Generate-Il2CppDef命令的时候发生异常：region:PLACE_HOLDER start not find。   
+- 在使用2021-1.0版本的HybridCLR的时候，调用HybridCLR-Generate-Il2CppDef命令的时候发生异常：region:PLACE_HOLDER start not find。   
 这是因为一个模板文件的替换字符不对应所致，可以到 项目目录/HybridCLRData/LocalIl2Cpp-WindowsEditor/il2cpp/libil2cpp/hybridclr/Il2CppCompatibleDec.cpp中，将"!!!{{DHE"和"!!!}}DHE"中的DHE替换成PLACE_HOLDER，问题得以解决
 
 ## 安装
