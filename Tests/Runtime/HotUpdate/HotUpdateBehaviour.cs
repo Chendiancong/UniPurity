@@ -5,18 +5,14 @@ namespace HotUpdate
 {
     public class HotUpdateBehaviour : MonoBehaviour
     {
-        void Start()
+        private void Start()
         {
-            List<string> list = new List<string>()
-            {
-                "Hello",
-                " ",
-                "world!",
-            };
-            string str = "";
-            foreach (string elem in list)
-                str += elem;
-            Debug.Log(str);
+            Debug.Log(Message());
+        }
+
+        public string Message()
+        {
+            return "Hello World!";
         }
     }
 }

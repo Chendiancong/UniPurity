@@ -5,7 +5,7 @@ HybridCLR的说明文档：https://focus-creative-games.github.io/hybridclr/abou
 
 ## 功能
 ### Editor功能
-提供了整合HybridCLR命令的功能，这些操作都集合在UniPurity/Settings窗口里面，包括：
+提供了整合HybridCLR命令的功能，这些操作都集合在UniPurity/SettingWindow窗口里面，包括：
 - 添加补充元数据的aot程序集   
 - 自定义程序集的最终输出目录   
 - 根据平台，基于hclr工具链对脚本进行构建   
@@ -16,7 +16,7 @@ HybridCLR的说明文档：https://focus-creative-games.github.io/hybridclr/abou
 - 通过对比清单文件，下载并更新本地热更新程序集   
 - 加载指定的aot程序集，补充元数据   
 - 加载热更新程序集
-可以通过这个方法来完成加载器的任务：
+- 可以通过这个方法来完成加载器的任务：
 ```CSharp
 using UniPurity;
 
@@ -46,4 +46,4 @@ private IEnumerator Init()
 使用UniPurity需要先安装HybridCLR的工具套件   
 可以通过gitee的url来安装：https://gitee.com/focus-creative-games/hybridclr_unity.git,   
 也可以先clone下来，进行本地安装
-再安装UniPurity工具
+再安装UniPurity工具，url为：https://gitee.com/diancongchen/UniPurity.git
