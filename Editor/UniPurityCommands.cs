@@ -12,7 +12,7 @@ namespace UniPurity.Editor
     {
         public static void BuildAOTWithTarget(BuildTarget target)
         {
-            Debug.Log($"[UniPurityCommands] Build aot dlls for {target}");
+            Debug.Log($"[UniPurityCommands] Build aot for {target}");
             StripAOTDllCommand.GenerateStripedAOTDlls(target, EditorUserBuildSettings.selectedBuildTargetGroup);
             MethodBridgeGeneratorCommand.GenerateMethodBridge(target);
             ReversePInvokeWrapperGeneratorCommand.GenerateReversePInvokeWrapper(target);
@@ -21,16 +21,25 @@ namespace UniPurity.Editor
 
         public static void BuildHotUpdateWithTarget(BuildTarget target)
         {
-            Debug.Log($"[UniPurityCommands] Build hotupdate dlls for {target}");
+            Debug.Log($"[UniPurityCommands] Build hotupdate for {target}");
             CompileDllCommand.CompileDll(target);
             Il2CppDefGeneratorCommand.GenerateIl2CppDef();
             LinkGeneratorCommand.GenerateLinkXml(target);
+
+            MethodBridgeGeneratorCommand.GenerateMethodBridge(target);
+            ReversePInvokeWrapperGeneratorCommand.GenerateReversePInvokeWrapper(target);
+            AOTReferenceGeneratorCommand.GenerateAOTGenericReference(target);
         }
 
         public static void BuildAllWithTarget(BuildTarget target)
         {
-            BuildHotUpdateWithTarget(target);
-            BuildAOTWithTarget(target);
+            Debug.Log($"[UniPurityCommands] Build all for {target}");
+            CompileDllCommand.CompileDll(target);
+            Il2CppDefGeneratorCommand.GenerateIl2CppDef();
+            LinkGeneratorCommand.GenerateLinkXml(target);
+            MethodBridgeGeneratorCommand.GenerateMethodBridge(target);
+            ReversePInvokeWrapperGeneratorCommand.GenerateReversePInvokeWrapper(target);
+            AOTReferenceGeneratorCommand.GenerateAOTGenericReference(target);
         }
 
         public static void CopyAOTDllWithTarget(BuildTarget target)

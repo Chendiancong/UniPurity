@@ -5,12 +5,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Unity.EditorCoroutines.Editor;
+using HybridCLR.Editor;
 
 namespace UniPurity.Editor
 {
     public class UniPuritySettingWindow : EditorWindow
     {
-        private SerializedObject mSerializedObject;
+        private SerializedObject mUniPuritySettingSerializedObject;
         private SerializedProperty mStaticNeededAOTAssProp;
         private SerializedProperty mNeededAOTAssProp;
         private SerializedProperty mDefaultDllPathProp;
@@ -105,9 +106,9 @@ namespace UniPurity.Editor
 
         private void SaveObject()
         {
-            if (mSerializedObject is not null && mSerializedObject.targetObject)
+            if (mUniPuritySettingSerializedObject is not null && mUniPuritySettingSerializedObject.targetObject)
             {
-                mSerializedObject.ApplyModifiedProperties();
+                mUniPuritySettingSerializedObject.ApplyModifiedProperties();
                 UniPurityEditorSettings.Instance.Save();
             }
         }
@@ -120,16 +121,17 @@ namespace UniPurity.Editor
 
         private void InitProps()
         {
-            //Unity在BuidPipeline.BuildPlayer的时候会回收掉所有的ScriptableObject，从而造成mSerializedObject失效
-            //所以要持续判断mSerializedObject.targetObject的有效性
-            if (mSerializedObject is not null && mSerializedObject.targetObject)
-                return;
-            mSerializedObject?.Dispose();
-            mSerializedObject = new SerializedObject(UniPurityEditorSettings.Instance);
-            RefreshProp(ref mStaticNeededAOTAssProp, "staticNeededAOTAssemblies", mSerializedObject);
-            RefreshProp(ref mNeededAOTAssProp, "neededAOTAssemblies", mSerializedObject);
-            RefreshProp(ref mDefaultDllPathProp, "defaultDllPath", mSerializedObject);
-            RefreshProp(ref mCustomDllPathProp, "customDllPath", mSerializedObject);
+            //Unity在BuidPipeline.BuildPlayer的时候会回收掉所有的ScriptableObject，从而造成SerializedObject失效
+            //所以要持续判断SerializedObject.targetObject以检查其有效性
+            if (mUniPuritySettingSerializedObject is null || !mUniPuritySettingSerializedObject.targetObject)
+            {
+                mUniPuritySettingSerializedObject?.Dispose();
+                var sobj = mUniPuritySettingSerializedObject = new SerializedObject(UniPurityEditorSettings.Instance);
+                RefreshProp(ref mStaticNeededAOTAssProp, "staticNeededAOTAssemblies", sobj);
+                RefreshProp(ref mNeededAOTAssProp, "neededAOTAssemblies", sobj);
+                RefreshProp(ref mDefaultDllPathProp, "defaultDllPath", sobj);
+                RefreshProp(ref mCustomDllPathProp, "customDllPath", sobj);
+            }
         }
 
         private void InitStyles()

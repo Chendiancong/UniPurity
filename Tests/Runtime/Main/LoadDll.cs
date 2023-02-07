@@ -39,5 +39,9 @@ public class LoadDll : MonoBehaviour
         Type type = ass.GetType("HotUpdate.HotUpdateMain");
         Func<string> action = (Func<string>)Delegate.CreateDelegate(typeof(Func<string>), null, type.GetMethod("Message"));
         uiText.text = action();
+
+        type = ass.GetType("HotUpdate.HotUpdateBehaviour");
+        GameObject go = new GameObject("New");
+        go.AddComponent(type);
     }
 }
