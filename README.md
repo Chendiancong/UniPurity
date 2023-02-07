@@ -45,5 +45,5 @@ private IEnumerator Init()
 ## 安装
 使用UniPurity需要先安装HybridCLR的工具套件   
 可以通过gitee的url来安装：https://gitee.com/focus-creative-games/hybridclr_unity.git,   
-也可以先clone下来，进行本地安装
+也可以先clone下来，进行本地安装，然后在HybirdCLR-installer中安装对应版本的il2cpp项目   
 再安装UniPurity工具，url为：https://gitee.com/diancongchen/UniPurity.git
